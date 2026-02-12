@@ -37,6 +37,15 @@ interface ApiService {
     @FormUrlEncoded
     @POST("delete_empleado.php")
     fun deleteEmpleado(@Field("id") id: Int): Call<LoginResponse>
+
+    @FormUrlEncoded
+    @POST("update_empleado.php")
+    fun updateEmpleado(
+        @Field("id") id: Int,
+        @Field("dni") dni: String,
+        @Field("nombre") nombre: String,
+        @Field("rol") rol: String
+    ): Call<LoginResponse>
 }
 
 object RetrofitClient {
