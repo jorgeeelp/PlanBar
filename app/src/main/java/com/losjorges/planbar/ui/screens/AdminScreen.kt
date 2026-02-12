@@ -74,7 +74,6 @@ fun AdminScreen() {
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // --- INICIO DEL DESPLEGABLE DE ROL ---
                     ExposedDropdownMenuBox(
                         expanded = expanded,
                         onExpandedChange = { expanded = !expanded }
