@@ -33,7 +33,7 @@ fun AdminScreen() {
 
     var expanded by remember { mutableStateOf(false) }
 
-    val opcionesRol = listOf("camarero", "cocinero", "admin")
+    val opcionesRol = listOf("barra", "cocinero", "admin")
 
     var listaEmpleados by remember { mutableStateOf(emptyList<Empleado>()) }
     var idEmpleadoSeleccionado by remember { mutableStateOf<Int?>(null) }
