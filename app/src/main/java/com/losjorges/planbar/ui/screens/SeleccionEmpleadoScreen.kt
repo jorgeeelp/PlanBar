@@ -25,6 +25,7 @@ import androidx.navigation.NavHostController
 import com.losjorges.planbar.models.Empleado
 import com.losjorges.planbar.models.LoginResponse
 import com.losjorges.planbar.network.RetrofitClient
+import com.losjorges.planbar.utils.toSHA256
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -124,7 +125,9 @@ fun SeleccionEmpleadoScreen(navController: NavHostController) {
                 confirmButton = {
                     Button(
                         onClick = {
-                            RetrofitClient.instance.loginAdmin(adminPassword).enqueue(object : Callback<LoginResponse> {
+                            val passCifrada = adminPassword.toSHA256()
+
+                            RetrofitClient.instance.loginAdmin(passCifrada).enqueue(object : Callback<LoginResponse> {
                                 override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                                     if (response.isSuccessful && response.body()?.success == true) {
                                         showAdminDialog = false
