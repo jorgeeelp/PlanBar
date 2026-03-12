@@ -7,6 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.losjorges.planbar.ui.screens.AdminScreen
+import com.losjorges.planbar.ui.screens.CamareroMainScreen
+import com.losjorges.planbar.ui.screens.CocineroMainScreen
 import com.losjorges.planbar.ui.screens.MesasScreen
 import com.losjorges.planbar.ui.screens.SeleccionEmpleadoScreen
 import com.losjorges.planbar.ui.theme.PlanBarTheme
@@ -19,8 +21,19 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 NavHost(navController = navController, startDestination = "seleccion_empleado") {
                     composable("seleccion_empleado") { SeleccionEmpleadoScreen(navController) }
-                    composable("menu") { MesasScreen(navController) }
                     composable("admin_panel") { AdminScreen() }
+
+                    // RUTA CAMARERO
+                    composable("camarero_home/{nombre}") { backStackEntry ->
+                        val nombre = backStackEntry.arguments?.getString("nombre") ?: "Camarero"
+                        CamareroMainScreen(nombre)
+                    }
+
+                    // RUTA COCINERO
+                    composable("cocinero_home/{nombre}") { backStackEntry ->
+                        val nombre = backStackEntry.arguments?.getString("nombre") ?: "Cocinero"
+                        CocineroMainScreen(nombre)
+                    }
                 }
             }
         }

@@ -4,6 +4,7 @@ import com.losjorges.planbar.models.Empleado
 import com.losjorges.planbar.models.LoginResponse
 import com.losjorges.planbar.models.Mesa
 import com.losjorges.planbar.models.Producto
+import com.losjorges.planbar.models.Reserva
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -96,6 +97,10 @@ interface ApiService {
     @FormUrlEncoded
     @POST("delete_producto.php")
     fun deleteProducto(@Field("id") id: Int): Call<LoginResponse>
+
+    //reservas
+    @GET("get_reservas.php")
+    fun getReservas(): Call<List<Reserva>>
 }
 
 object RetrofitClient {
