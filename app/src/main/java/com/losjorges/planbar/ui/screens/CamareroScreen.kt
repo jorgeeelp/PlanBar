@@ -1,19 +1,38 @@
 package com.losjorges.planbar.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import com.losjorges.planbar.models.Mesa
+import com.losjorges.planbar.models.Reserva
+import com.losjorges.planbar.network.RetrofitClient
 import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CamareroMainScreen(nombre: String) {
+fun CamareroMainScreen(nombre: String, navController: NavHostController) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var pantallaActual by remember { mutableStateOf("mesas") }
@@ -22,17 +41,39 @@ fun CamareroMainScreen(nombre: String) {
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                Text("CAMARERO: $nombre", modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("CAMARERO: $nombre",
+                    modifier = Modifier.padding(16.dp),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
                 HorizontalDivider()
+
                 NavigationDrawerItem(
                     label = { Text("Mapa de Mesas") },
                     selected = pantallaActual == "mesas",
-                    onClick = { pantallaActual = "mesas"; scope.launch { drawerState.close() } }
+                    onClick = {
+                        pantallaActual = "mesas"
+                        scope.launch { drawerState.close() }
+                    }
                 )
+
                 NavigationDrawerItem(
                     label = { Text("Ver Reservas") },
                     selected = pantallaActual == "reservas",
-                    onClick = { pantallaActual = "reservas"; scope.launch { drawerState.close() } }
+                    onClick = {
+                        pantallaActual = "reservas"
+                        scope.launch { drawerState.close() }
+                    }
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.ExitToApp, null) },
+                    label = { Text("Cerrar Sesión") },
+                    selected = false,
+                    onClick = { navController.navigate("seleccion_empleado") }
                 )
             }
         }
@@ -40,10 +81,19 @@ fun CamareroMainScreen(nombre: String) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(if (pantallaActual == "mesas") "Mesas Disponibles" else "Lista de Reservas") },
+                    title = {
+                        Column {
+                            Text(
+                                if (pantallaActual == "mesas") "GESTIÓN DE MESAS" else "RESERVAS",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                            Text("Atendiendo como: $nombre", fontSize = 11.sp, color = Color.Gray)
+                        }
+                    },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = null)
+                            Icon(Icons.Default.Menu, null)
                         }
                     }
                 )
@@ -51,15 +101,192 @@ fun CamareroMainScreen(nombre: String) {
         ) { padding ->
             Box(modifier = Modifier.padding(padding).fillMaxSize()) {
                 if (pantallaActual == "mesas") {
-                    // Aquí llamaremos pronto a la lógica de mesas para camareros
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Aquí el camarero verá las mesas de colores")
-                    }
+                    GestionMesasCamareroContent()
                 } else {
-                    // Aquí llamaremos pronto a la lógica de reservas
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Aquí el camarero verá el listado de reservas")
+                    ListaReservasContent()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GestionMesasCamareroContent() {
+    val context = LocalContext.current
+    var listaMesas by remember { mutableStateOf(emptyList<Mesa>()) }
+    var cargando by remember { mutableStateOf(true) }
+
+    fun cargarMesas() {
+        cargando = true
+        RetrofitClient.instance.getMesas().enqueue(object : Callback<List<Mesa>> {
+            override fun onResponse(call: Call<List<Mesa>>, response: Response<List<Mesa>>) {
+                cargando = false
+                if (response.isSuccessful) {
+                    listaMesas = response.body() ?: emptyList()
+                }
+            }
+            override fun onFailure(call: Call<List<Mesa>>, t: Throwable) {
+                cargando = false
+                Toast.makeText(context, "Error al conectar con el servidor", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    LaunchedEffect(Unit) {
+        cargarMesas()
+    }
+
+    if (cargando) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(onClick = { cargarMesas() }) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
+                }
+            }
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(listaMesas) { mesa ->
+                    MesaItem(mesa) {
+                        Toast.makeText(context, "Mesa ${mesa.numero_mesa} seleccionada", Toast.LENGTH_SHORT).show()
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MesaItem(mesa: Mesa, onClick: () -> Unit) {
+    val colorEstado = when (mesa.estado_mesa.lowercase()) {
+        "libre", "disponible" -> Color(0xFF2E7D32)
+        "reservada" -> Color(0xFFF57C00)
+        "ocupada" -> Color(0xFFD32F2F)
+        else -> Color.DarkGray
+    }
+
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(130.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = colorEstado),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text("MESA", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f), fontWeight = FontWeight.Bold)
+            Text(mesa.numero_mesa.toString(), fontSize = 42.sp, color = Color.White, fontWeight = FontWeight.ExtraBold)
+            Text("${mesa.capacidad_mesa} PERSONAS", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Medium)
+        }
+    }
+}
+
+@Composable
+fun ListaReservasContent() {
+    val context = LocalContext.current
+    var listaReservas by remember { mutableStateOf(emptyList<Reserva>()) }
+    var cargando by remember { mutableStateOf(true) }
+
+    fun cargarReservas() {
+        cargando = true
+        RetrofitClient.instance.getReservas().enqueue(object : Callback<List<Reserva>> {
+            override fun onResponse(call: Call<List<Reserva>>, response: Response<List<Reserva>>) {
+                cargando = false
+                if (response.isSuccessful) {
+                    listaReservas = response.body() ?: emptyList()
+                }
+            }
+            override fun onFailure(call: Call<List<Reserva>>, t: Throwable) {
+                cargando = false
+                Toast.makeText(context, "Error de conexión", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    LaunchedEffect(Unit) {
+        cargarReservas()
+    }
+
+    if (cargando) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(onClick = { cargarReservas() }) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (listaReservas.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No hay reservas todavía", color = Color.Gray)
+                }
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(listaReservas) { reserva ->
+                        ReservaItem(reserva)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReservaItem(reserva: Reserva) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(reserva.nombre_cliente, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
+                    Text("MESA ${reserva.numero_mesa}", modifier = Modifier.padding(4.dp), color = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("CUÁNDO", fontSize = 10.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                    Text(reserva.fecha_reserva, fontSize = 14.sp, color = Color.Black)
+                    Text(reserva.hora_reserva, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("PERSONAS", fontSize = 10.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                    Text("${reserva.num_personas} Comensales", fontSize = 14.sp, color = Color.Black)
                 }
             }
         }
