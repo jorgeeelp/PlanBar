@@ -86,7 +86,6 @@ fun MesasScreen(navController: NavHostController) {
                     ) {
                         items(listaMesas) { mesa ->
                             MesaItem(mesa) {
-                                // Aquí navegaremos a la pantalla de pedido en el futuro
                                 Toast.makeText(context, "Mesa ${mesa.numero_mesa} seleccionada", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -99,11 +98,10 @@ fun MesasScreen(navController: NavHostController) {
 
 @Composable
 fun MesaItem(mesa: Mesa, onClick: () -> Unit) {
-    // Lógica de colores según tus instrucciones
     val colorEstado = when (mesa.estado_mesa.lowercase()) {
-        "libre", "disponible" -> Color(0xFF2E7D32) // Verde
-        "reservada" -> Color(0xFFF57C00)           // Naranja
-        "ocupada" -> Color(0xFFD32F2F)             // Rojo
+        "libre" -> Color(0xFF2E7D32)
+        "reservada" -> Color(0xFFF57C00)
+        "ocupada" -> Color(0xFFD32F2F)
         else -> Color.DarkGray
     }
 

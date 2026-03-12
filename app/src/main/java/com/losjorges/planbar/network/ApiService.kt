@@ -13,12 +13,11 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 
 interface ApiService {
-    //LOGIN Y SEGURIDAD
     @FormUrlEncoded
     @POST("login_admin.php")
     fun loginAdmin(@Field("pass") pass: String): Call<LoginResponse>
 
-    //EMPLEADOS
+    //empleado
     @GET("get_empleados.php")
     fun getEmpleados(): Call<List<Empleado>>
 
@@ -46,7 +45,7 @@ interface ApiService {
     @POST("delete_empleado.php")
     fun deleteEmpleado(@Field("id") id: Int): Call<LoginResponse>
 
-    //MESAS
+    //mesas
     @GET("get_mesas.php")
     fun getMesas(): Call<List<Mesa>>
 
@@ -69,7 +68,7 @@ interface ApiService {
     @POST("delete_mesa.php")
     fun deleteMesa(@Field("id") id: Int): Call<LoginResponse>
 
-    //PRODUCTOS
+    //productos
     @GET("get_productos.php")
     fun getProductos(): Call<List<Producto>>
 
