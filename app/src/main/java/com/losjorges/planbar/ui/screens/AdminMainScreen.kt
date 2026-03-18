@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.losjorges.planbar.models.Empleado
 import com.losjorges.planbar.models.LoginResponse
 import com.losjorges.planbar.models.Mesa
@@ -35,7 +36,7 @@ import retrofit2.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminScreen() {
+fun AdminScreen(navController: NavHostController) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var pantallaActual by remember { mutableStateOf("empleados") }
@@ -106,6 +107,17 @@ fun AdminScreen() {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Default.Menu, contentDescription = "Menú")
                         }
+                    },
+                    actions = {
+                        if (pantallaActual == "mesas") {
+                            TextButton(onClick = { navController.navigate("posicionar_mesas") }) {
+                                Text(
+                                    text = "POSICIONAR",
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
                     }
                 )
             }
@@ -157,6 +169,7 @@ fun GestionMesasContent() {
                     fontWeight = FontWeight.Bold,
                     color = if (idMesaSeleccionada == null) MaterialTheme.colorScheme.primary else Color(0xFFE65100)
                 )
+
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = numero,
@@ -165,6 +178,7 @@ fun GestionMesasContent() {
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = capacidad,
@@ -464,12 +478,10 @@ fun GestionEmpleadosContent() {
 fun GestionProductosContent() {
     val context = LocalContext.current
 
-    // Estados de los campos
     var nombre by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
     var observaciones by remember { mutableStateOf("") }
 
-    // ESTADOS PARA CATEGORÍA
     var categoria by remember { mutableStateOf("") }
     var expandedCat by remember { mutableStateOf(false) }
     val opcionesCategoria = listOf("entrantes", "carnes", "pescados", "bebidas", "postres")
@@ -511,12 +523,10 @@ fun GestionProductosContent() {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Nombre
                 OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre del Producto") }, modifier = Modifier.fillMaxWidth())
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Fila para Precio y Categoría
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = precio,
@@ -616,7 +626,6 @@ fun GestionProductosContent() {
         Text("Productos", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(8.dp))
 
-        // LISTA DE PRODUCTOS
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(listaProductos) { prod ->
                 Surface(
@@ -634,7 +643,6 @@ fun GestionProductosContent() {
                 ) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            // MOSTRAR: NOMBRE | CATEGORÍA
                             Text(
                                 text = "${prod.nombre_producto.uppercase()} | ${prod.categoria_producto.uppercase()}",
                                 fontWeight = FontWeight.Bold,
