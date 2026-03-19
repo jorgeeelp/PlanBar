@@ -1,5 +1,6 @@
 package com.losjorges.planbar.ui.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,30 +42,32 @@ fun CamareroMainScreen(nombre: String, navController: NavHostController) {
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(15.dp))
                 Text("CAMARERO: $nombre",
                     modifier = Modifier.padding(16.dp),
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
                 HorizontalDivider()
-
+                Spacer(modifier = Modifier.height(10.dp))
                 NavigationDrawerItem(
                     label = { Text("Mapa de Mesas") },
                     selected = pantallaActual == "mesas",
                     onClick = {
                         pantallaActual = "mesas"
                         scope.launch { drawerState.close() }
-                    }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
-
+                Spacer(modifier = Modifier.height(10.dp))
                 NavigationDrawerItem(
                     label = { Text("Ver Reservas") },
                     selected = pantallaActual == "reservas",
                     onClick = {
                         pantallaActual = "reservas"
                         scope.launch { drawerState.close() }
-                    }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -101,7 +104,7 @@ fun CamareroMainScreen(nombre: String, navController: NavHostController) {
         ) { padding ->
             Box(modifier = Modifier.padding(padding).fillMaxSize()) {
                 if (pantallaActual == "mesas") {
-                    GestionMesasCamareroContent()
+                    GestionMesasCamareroContent(navController)
                 } else {
                     ListaReservasContent()
                 }
@@ -111,66 +114,17 @@ fun CamareroMainScreen(nombre: String, navController: NavHostController) {
 }
 
 @Composable
-fun GestionMesasCamareroContent() {
-    val context = LocalContext.current
-    var listaMesas by remember { mutableStateOf(emptyList<Mesa>()) }
-    var cargando by remember { mutableStateOf(true) }
-
-    fun cargarMesas() {
-        cargando = true
-        RetrofitClient.instance.getMesas().enqueue(object : Callback<List<Mesa>> {
-            override fun onResponse(call: Call<List<Mesa>>, response: Response<List<Mesa>>) {
-                cargando = false
-                if (response.isSuccessful) {
-                    listaMesas = response.body() ?: emptyList()
-                }
-            }
-            override fun onFailure(call: Call<List<Mesa>>, t: Throwable) {
-                cargando = false
-                Toast.makeText(context, "Error al conectar con el servidor", Toast.LENGTH_SHORT).show()
-            }
-        })
-    }
-
-    LaunchedEffect(Unit) {
-        cargarMesas()
-    }
-
-    if (cargando) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-    } else {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                IconButton(onClick = { cargarMesas() }) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refrescar")
-                }
-            }
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(listaMesas) { mesa ->
-                    MesaItem(mesa) {
-                        Toast.makeText(context, "Mesa ${mesa.numero_mesa} seleccionada", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
+fun GestionMesasCamareroContent(navController: NavHostController) {
+    MapaMesasScreen(isAdmin = false) { mesa ->
+        navController.navigate("detalle_mesa/${mesa.id_mesa}/${mesa.numero_mesa}")
+        Log.d("Navigation", "Navigating to detalle_mesa/${mesa.id_mesa}/${mesa.numero_mesa}")
     }
 }
 
 @Composable
 fun MesaItem(mesa: Mesa, onClick: () -> Unit) {
     val colorEstado = when (mesa.estado_mesa.lowercase()) {
-        "libre", "disponible" -> Color(0xFF2E7D32)
+        "libre" -> Color(0xFF2E7D32)
         "reservada" -> Color(0xFFF57C00)
         "ocupada" -> Color(0xFFD32F2F)
         else -> Color.DarkGray

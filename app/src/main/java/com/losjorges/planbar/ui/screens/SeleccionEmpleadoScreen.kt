@@ -42,10 +42,18 @@ fun SeleccionEmpleadoScreen(navController: NavHostController) {
     LaunchedEffect(Unit) {
         RetrofitClient.instance.getEmpleados().enqueue(object : Callback<List<Empleado>> {
             override fun onResponse(call: Call<List<Empleado>>, response: Response<List<Empleado>>) {
-                if (response.isSuccessful) listaEmpleados = response.body() ?: emptyList()
+                if (response.isSuccessful) {
+                    listaEmpleados = response.body() ?: emptyList()
+                } else {
+                    Toast.makeText(context, "Error servidor: ${response.code()}", Toast.LENGTH_SHORT).show()
+                }
             }
             override fun onFailure(call: Call<List<Empleado>>, t: Throwable) {
-                Toast.makeText(context, "Sin conexión al servidor", Toast.LENGTH_SHORT).show()
+                val nombreError = t::class.java.simpleName
+                val mensajeError = t.message ?: "Sin mensaje detallado"
+
+                android.util.Log.e("CONEXION_DEBUG", "TIPO: $nombreError | MENSAJE: $mensajeError")
+                Toast.makeText(context, "Error: $nombreError", Toast.LENGTH_LONG).show()
             }
         })
     }

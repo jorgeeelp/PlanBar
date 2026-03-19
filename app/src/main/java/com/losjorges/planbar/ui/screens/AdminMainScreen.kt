@@ -45,10 +45,10 @@ fun AdminScreen(navController: NavHostController) {
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(15.dp))
                 Text("Menu", modifier = Modifier.padding(16.dp), fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 HorizontalDivider()
-
+                Spacer(modifier = Modifier.height(10.dp))
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Person, contentDescription = null) },
                     label = {
@@ -65,7 +65,7 @@ fun AdminScreen(navController: NavHostController) {
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
-
+                Spacer(modifier = Modifier.height(10.dp))
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Build, contentDescription = null) },
                     label = { Text("Gestión Mesas") },
@@ -76,7 +76,7 @@ fun AdminScreen(navController: NavHostController) {
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
-
+                Spacer(modifier = Modifier.height(10.dp))
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.ShoppingCart, contentDescription = null) },
                     label = { Text("Gestión Productos") },
@@ -376,7 +376,10 @@ fun GestionEmpleadosContent() {
                             if (dni.isNotEmpty() && nombre.isNotEmpty() && rol.isNotEmpty()) {
                                 RetrofitClient.instance.insertEmpleado(dni, nombre, rol).enqueue(object : Callback<LoginResponse> {
                                     override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                                        if (response.isSuccessful) { limpiarFormulario(); cargarEmpleados(); Toast.makeText(context, "Insertado", Toast.LENGTH_SHORT).show() }
+                                        if (response.isSuccessful) {
+                                            limpiarFormulario();
+                                            cargarEmpleados();
+                                            Toast.makeText(context, "Insertado", Toast.LENGTH_SHORT).show() }
                                     }
                                     override fun onFailure(call: Call<LoginResponse>, t: Throwable) {}
                                 })
@@ -391,7 +394,10 @@ fun GestionEmpleadosContent() {
                             idEmpleadoSeleccionado?.let { id ->
                                 RetrofitClient.instance.updateEmpleado(id, dni, nombre, rol).enqueue(object : Callback<LoginResponse> {
                                     override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                                        if (response.isSuccessful) { limpiarFormulario(); cargarEmpleados(); Toast.makeText(context, "Actualizado", Toast.LENGTH_SHORT).show() }
+                                        if (response.isSuccessful) {
+                                            limpiarFormulario();
+                                            cargarEmpleados();
+                                            Toast.makeText(context, "Actualizado", Toast.LENGTH_SHORT).show() }
                                     }
                                     override fun onFailure(call: Call<LoginResponse>, t: Throwable) {}
                                 })

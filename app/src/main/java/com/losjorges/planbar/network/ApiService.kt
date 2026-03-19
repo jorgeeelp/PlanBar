@@ -5,6 +5,7 @@ import com.losjorges.planbar.models.LoginResponse
 import com.losjorges.planbar.models.Mesa
 import com.losjorges.planbar.models.Producto
 import com.losjorges.planbar.models.Reserva
+import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -12,6 +13,7 @@ import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.POST
+import java.util.concurrent.TimeUnit
 
 interface ApiService {
     @FormUrlEncoded
@@ -69,6 +71,14 @@ interface ApiService {
     @POST("delete_mesa.php")
     fun deleteMesa(@Field("id") id: Int): Call<LoginResponse>
 
+    @FormUrlEncoded
+    @POST("update_mesa_posicion.php")
+    fun updateMesaPosicion(
+        @Field("id") id: Int,
+        @Field("posX") posX: Float,
+        @Field("posY") posY: Float
+    ): Call<LoginResponse>
+
     //productos
     @GET("get_productos.php")
     fun getProductos(): Call<List<Producto>>
@@ -106,9 +116,16 @@ interface ApiService {
 object RetrofitClient {
     private const val BASE_URL = "http://planbar.atwebpages.com"
 
+    private val okHttpClient = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
+
     val instance: ApiService by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
