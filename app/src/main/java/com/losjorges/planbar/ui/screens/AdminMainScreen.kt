@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTimeFilled
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
@@ -169,7 +170,6 @@ fun GestionMesasContent() {
                     fontWeight = FontWeight.Bold,
                     color = if (idMesaSeleccionada == null) MaterialTheme.colorScheme.primary else Color(0xFFE65100)
                 )
-
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = numero,
@@ -178,7 +178,6 @@ fun GestionMesasContent() {
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
-
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = capacidad,
@@ -187,7 +186,7 @@ fun GestionMesasContent() {
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
-
+                Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = {
@@ -262,17 +261,26 @@ fun GestionMesasContent() {
                             Text("MESA Nº ${mesa.numero_mesa}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
                             Text("Capacidad: ${mesa.capacidad_mesa} personas", fontSize = 14.sp, color = Color.Gray)
 
-                            Text(
-                                text = "Estado: ${mesa.estado_mesa.uppercase()}",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = when(mesa.estado_mesa.lowercase()) {
-                                    "libre", "disponible" -> Color(0xFF2E7D32)
-                                    "reservada" -> Color(0xFFF57C00)
-                                    "ocupada" -> Color.Red
-                                    else -> Color.Gray
-                                }
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "ESTADO: ",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.Black
+                                )
+
+                                Text(
+                                    text = mesa.estado_mesa.uppercase(),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = when(mesa.estado_mesa.lowercase()) {
+                                        "libre" -> Color(0xFF2E7D32)
+                                        "reservada" -> Color(0xFFF57C00)
+                                        "ocupada" -> Color.Red
+                                        else -> Color.Gray
+                                    }
+                                )
+                            }
                         }
                         IconButton(
                             onClick = { mesaToDelete = mesa; showDeleteDialog = true },
@@ -422,7 +430,10 @@ fun GestionEmpleadosContent() {
         Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            val listaFiltrada = listaEmpleados.filter { it.rol_empleado != "admin" }
+            val listaFiltrada = listaEmpleados.filter {
+                it.rol_empleado != "admin"
+            }
+
             items(listaFiltrada) { emp ->
                 Surface(
                     onClick = {
@@ -436,7 +447,11 @@ fun GestionEmpleadosContent() {
                     color = if (idEmpleadoSeleccionado == emp.id_empleado) Color(0xFFFFF3E0) else Color.White,
                     tonalElevation = 2.dp
                 ) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("ID: ${emp.id_empleado} | ${emp.rol_empleado.uppercase()}", fontSize = 11.sp, color = Color.Black)
                             Text(emp.nombre_empleado, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)

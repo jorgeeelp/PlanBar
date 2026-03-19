@@ -4,14 +4,13 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -182,7 +181,7 @@ fun ListaReservasContent() {
             CircularProgressIndicator()
         }
     } else {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(15.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
@@ -192,14 +191,14 @@ fun ListaReservasContent() {
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             if (listaReservas.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No hay reservas todavía", color = Color.Gray)
                 }
             } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(listaReservas) { reserva ->
                         ReservaItem(reserva)
                     }
@@ -212,35 +211,81 @@ fun ListaReservasContent() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservaItem(reserva: Reserva) {
+    val (colorEstado, textoEstado) = when(reserva.estado.lowercase()) {
+        "en espera" -> Color(0xFF0288D1) to "EN ESPERA"
+        "en mesa"   -> Color(0xFF2E7D32) to "EN MESA"
+        "terminada" -> Color(0xFF757575) to "TERMINADA"
+        else        -> Color.Black to "N/A"
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                Text(reserva.nombre_cliente, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
-                    Text("MESA ${reserva.numero_mesa}", modifier = Modifier.padding(4.dp), color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Column {
+                    Text(
+                        text = "#${reserva.num_reserva}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = reserva.nombre_cliente,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        color = colorEstado.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = textoEstado,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            color = colorEstado,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = CircleShape,
+                    modifier = Modifier.width(100.dp).height(50.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "Mesa ${reserva.numero_mesa}",
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp)
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("CUÁNDO", fontSize = 10.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-                    Text(reserva.fecha_reserva, fontSize = 14.sp, color = Color.Black)
-                    Text(reserva.hora_reserva, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text("FECHA Y HORA", fontSize = 10.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                    Text("${reserva.fecha_reserva} a las ${reserva.hora_reserva}", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color.Black)
                 }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("PERSONAS", fontSize = 10.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-                    Text("${reserva.num_personas} Comensales", fontSize = 14.sp, color = Color.Black)
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("COMENSALES", fontSize = 10.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.People, null, modifier = Modifier.size(14.dp), tint = Color.Black)
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text("${reserva.num_personas}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    }
                 }
             }
         }

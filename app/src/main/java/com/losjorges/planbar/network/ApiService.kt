@@ -111,6 +111,12 @@ interface ApiService {
     //reservas
     @GET("get_reservas.php")
     fun getReservas(): Call<List<Reserva>>
+
+    @FormUrlEncoded
+    @POST("cancelar_reserva_por_num.php")
+    fun cancelarReservaPorNum(
+        @Field("num_reserva") num_reserva: String
+    ): Call<LoginResponse>
 }
 
 object RetrofitClient {

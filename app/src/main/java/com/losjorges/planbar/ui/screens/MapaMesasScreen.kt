@@ -66,6 +66,7 @@ fun MapaMesas(
     val colorEstado = when(mesa.estado_mesa.lowercase()) {
         "libre" -> Color(0xFF2E7D32)
         "reservada" -> Color(0xFFF57C00)
+        "ocupada" -> Color(0xFFD32F2F)
         else -> Color.Red
     }
 
