@@ -66,7 +66,7 @@ fun SeleccionEmpleadoScreen(navController: NavHostController) {
                 },
                 actions = {
                     IconButton(onClick = { showAdminDialog = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Admin", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Default.Settings, contentDescription = "Admin")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(

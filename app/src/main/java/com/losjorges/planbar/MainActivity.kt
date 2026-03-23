@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             PlanBarTheme {
                 val navController = rememberNavController()
+
                 NavHost(navController = navController, startDestination = "seleccion_empleado") {
                     composable("seleccion_empleado") { SeleccionEmpleadoScreen(navController) }
                     composable("admin_panel") { AdminScreen(navController) }

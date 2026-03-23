@@ -30,9 +30,11 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CamareroMainScreen(nombre: String, navController: NavHostController) {
+    val context = LocalContext.current
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var pantallaActual by remember { mutableStateOf("mesas") }

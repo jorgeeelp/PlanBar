@@ -21,14 +21,14 @@ interface ApiService {
     fun loginAdmin(@Field("pass") pass: String): Call<LoginResponse>
 
     //empleado
-    @GET("get_empleados.php")
+    @GET("empleados/get_empleados.php")
     fun getEmpleados(): Call<List<Empleado>>
 
-    @GET("get_empleados_admin.php")
+    @GET("empleados/get_empleados_admin.php")
     fun getEmpleadosAdmin(): Call<List<Empleado>>
 
     @FormUrlEncoded
-    @POST("insert_empleado.php")
+    @POST("empleados/insert_empleado.php")
     fun insertEmpleado(
         @Field("dni") dni: String,
         @Field("nombre") nombre: String,
@@ -36,7 +36,7 @@ interface ApiService {
     ): Call<LoginResponse>
 
     @FormUrlEncoded
-    @POST("update_empleado.php")
+    @POST("empleados/update_empleado.php")
     fun updateEmpleado(
         @Field("id") id: Int,
         @Field("dni") dni: String,
@@ -45,22 +45,22 @@ interface ApiService {
     ): Call<LoginResponse>
 
     @FormUrlEncoded
-    @POST("delete_empleado.php")
+    @POST("empleados/delete_empleado.php")
     fun deleteEmpleado(@Field("id") id: Int): Call<LoginResponse>
 
     //mesas
-    @GET("get_mesas.php")
+    @GET("mesas/get_mesas.php")
     fun getMesas(): Call<List<Mesa>>
 
     @FormUrlEncoded
-    @POST("insert_mesa.php")
+    @POST("mesas/insert_mesa.php")
     fun insertMesa(
         @Field("numero") numero: Int,
         @Field("capacidad") capacidad: Int
     ): Call<LoginResponse>
 
     @FormUrlEncoded
-    @POST("update_mesa.php")
+    @POST("mesas/update_mesa.php")
     fun updateMesa(
         @Field("id") id: Int,
         @Field("numero") numero: Int,
@@ -68,11 +68,11 @@ interface ApiService {
     ): Call<LoginResponse>
 
     @FormUrlEncoded
-    @POST("delete_mesa.php")
+    @POST("mesas/delete_mesa.php")
     fun deleteMesa(@Field("id") id: Int): Call<LoginResponse>
 
     @FormUrlEncoded
-    @POST("update_mesa_posicion.php")
+    @POST("mesas/update_mesa_posicion.php")
     fun updateMesaPosicion(
         @Field("id") id: Int,
         @Field("posX") posX: Float,
@@ -80,11 +80,11 @@ interface ApiService {
     ): Call<LoginResponse>
 
     //productos
-    @GET("get_productos.php")
+    @GET("productos/get_productos.php")
     fun getProductos(): Call<List<Producto>>
 
     @FormUrlEncoded
-    @POST("insert_producto.php")
+    @POST("productos/insert_producto.php")
     fun insertProducto(
         @Field("nombre") nombre: String,
         @Field("precio") precio: Double,
@@ -94,7 +94,7 @@ interface ApiService {
     ): Call<LoginResponse>
 
     @FormUrlEncoded
-    @POST("update_producto.php")
+    @POST("productos/update_producto.php")
     fun updateProducto(
         @Field("id") id: Int,
         @Field("nombre") nombre: String,
@@ -105,15 +105,15 @@ interface ApiService {
     ): Call<LoginResponse>
 
     @FormUrlEncoded
-    @POST("delete_producto.php")
+    @POST("productos/delete_producto.php")
     fun deleteProducto(@Field("id") id: Int): Call<LoginResponse>
 
     //reservas
-    @GET("get_reservas.php")
+    @GET("reservas/get_reservas.php")
     fun getReservas(): Call<List<Reserva>>
 
     @FormUrlEncoded
-    @POST("cancelar_reserva_por_num.php")
+    @POST("reservas/cancelar_reserva_por_num.php")
     fun cancelarReservaPorNum(
         @Field("num_reserva") num_reserva: String
     ): Call<LoginResponse>
