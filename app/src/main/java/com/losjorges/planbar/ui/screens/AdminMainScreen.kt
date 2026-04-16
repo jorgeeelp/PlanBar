@@ -142,6 +142,9 @@ fun GestionMesasContent() {
 
     var numero by remember { mutableStateOf("") }
     var capacidad by remember { mutableStateOf("") }
+    var estado by remember { mutableStateOf("libre") }
+    var expandedEstado by remember { mutableStateOf(false) }
+    val opcionesEstado = listOf("libre", "reservada", "ocupada")
 
     var listaMesas by remember { mutableStateOf(emptyList<Mesa>()) }
     var idMesaSeleccionada by remember { mutableStateOf<Int?>(null) }
@@ -149,7 +152,7 @@ fun GestionMesasContent() {
     var mesaToDelete by remember { mutableStateOf<Mesa?>(null) }
 
     fun limpiarFormulario() {
-        numero = ""; capacidad = ""; idMesaSeleccionada = null
+        numero = ""; capacidad = ""; estado = "libre"; idMesaSeleccionada = null
     }
 
     fun cargarMesas() {
@@ -187,6 +190,54 @@ fun GestionMesasContent() {
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                ExposedDropdownMenuBox(
+                    expanded = expandedEstado,
+                    onExpandedChange = { if (idMesaSeleccionada != null) expandedEstado = !expandedEstado }
+                ) {
+                    OutlinedTextField(
+                        value = estado,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Estado") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedEstado) },
+                        enabled = idMesaSeleccionada != null,
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = when (estado) {
+                                "libre"     -> Color(0xFF2E7D32)
+                                "reservada" -> Color(0xFFF57C00)
+                                "ocupada"   -> Color.Red
+                                else        -> Color.Gray
+                            },
+                            unfocusedTextColor = when (estado) {
+                                "libre"     -> Color(0xFF2E7D32)
+                                "reservada" -> Color(0xFFF57C00)
+                                "ocupada"   -> Color.Red
+                                else        -> Color.Gray
+                            }
+                        )
+                    )
+                    ExposedDropdownMenu(expanded = expandedEstado, onDismissRequest = { expandedEstado = false }) {
+                        opcionesEstado.forEach { opcion ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = opcion.replaceFirstChar { it.uppercase() },
+                                        color = when (opcion) {
+                                            "libre"     -> Color(0xFF2E7D32)
+                                            "reservada" -> Color(0xFFF57C00)
+                                            "ocupada"   -> Color.Red
+                                            else        -> Color.Gray
+                                        },
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
+                                onClick = { estado = opcion; expandedEstado = false }
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
@@ -215,7 +266,7 @@ fun GestionMesasContent() {
                     Button(
                         onClick = {
                             idMesaSeleccionada?.let { id ->
-                                RetrofitClient.instance.updateMesa(id, numero.toInt(), capacidad.toInt()).enqueue(object : Callback<LoginResponse> {
+                                RetrofitClient.instance.updateMesa(id, numero.toInt(), capacidad.toInt(), estado).enqueue(object : Callback<LoginResponse> {
                                     override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                                         if (response.isSuccessful) {
                                             limpiarFormulario()
@@ -250,6 +301,7 @@ fun GestionMesasContent() {
                         idMesaSeleccionada = mesa.id_mesa
                         numero = mesa.numero_mesa.toString()
                         capacidad = mesa.capacidad_mesa.toString()
+                        estado = mesa.estado_mesa
                     },
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     shape = RoundedCornerShape(8.dp),

@@ -1,6 +1,7 @@
 package com.losjorges.planbar.network
 
 import com.losjorges.planbar.models.Empleado
+import com.losjorges.planbar.models.LineaPedidoApi
 import com.losjorges.planbar.models.LoginResponse
 import com.losjorges.planbar.models.Mesa
 import com.losjorges.planbar.models.Producto
@@ -13,6 +14,7 @@ import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
 interface ApiService {
@@ -64,7 +66,8 @@ interface ApiService {
     fun updateMesa(
         @Field("id") id: Int,
         @Field("numero") numero: Int,
-        @Field("capacidad") capacidad: Int
+        @Field("capacidad") capacidad: Int,
+        @Field("estado") estado: String
     ): Call<LoginResponse>
 
     @FormUrlEncoded
@@ -108,6 +111,24 @@ interface ApiService {
     @POST("productos/delete_producto.php")
     fun deleteProducto(@Field("id") id: Int): Call<LoginResponse>
 
+    //pedidos
+    @GET("pedidos/get_pedido_mesa.php")
+    fun getPedidoMesa(@Query("mesa_id") mesaId: Int): Call<List<LineaPedidoApi>>
+
+    @GET("pedidos/get_mesas_activas.php")
+    fun getMesasActivas(): Call<List<Int>>
+
+    @FormUrlEncoded
+    @POST("pedidos/confirmar_pedido.php")
+    fun confirmarPedido(
+        @Field("mesa_id") mesaId: Int,
+        @Field("lineas") lineas: String
+    ): Call<LoginResponse>
+
+    @FormUrlEncoded
+    @POST("pedidos/liquidar_mesa.php")
+    fun liquidarMesa(@Field("mesa_id") mesaId: Int): Call<LoginResponse>
+
     //reservas
     @GET("reservas/get_reservas.php")
     fun getReservas(): Call<List<Reserva>>
@@ -120,7 +141,7 @@ interface ApiService {
 }
 
 object RetrofitClient {
-    private const val BASE_URL = "http://planbar.atwebpages.com"
+    private const val BASE_URL = "http://planbar.atwebpages.com/"
 
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)

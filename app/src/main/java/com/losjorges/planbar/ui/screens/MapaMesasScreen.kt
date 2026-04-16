@@ -8,11 +8,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.OpenWith
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -71,6 +74,9 @@ fun MapaMesasScreen(isAdmin: Boolean, onMesaClick: (Mesa) -> Unit) {
     var listaMesas by remember { mutableStateOf(emptyList<Mesa>()) }
     var mostrarDialogoNuevoElem by remember { mutableStateOf(false) }
     var elemSeleccionadoId by remember { mutableStateOf<Int?>(null) }
+    var canvasOffset by remember { mutableStateOf(Offset.Zero) }
+    // Camarero siempre en modo pan; admin empieza en modo edición
+    var modoPan by remember { mutableStateOf(!isAdmin) }
 
     LaunchedEffect(Unit) {
         RetrofitClient.instance.getMesas().enqueue(object : Callback<List<Mesa>> {
@@ -79,59 +85,86 @@ fun MapaMesasScreen(isAdmin: Boolean, onMesaClick: (Mesa) -> Unit) {
             }
             override fun onFailure(call: Call<List<Mesa>>, t: Throwable) {}
         })
+        RetrofitClient.instance.getMesasActivas().enqueue(object : Callback<List<Int>> {
+            override fun onResponse(call: Call<List<Int>>, response: Response<List<Int>>) {
+                if (response.isSuccessful) {
+                    PedidosStore.mesasConPedido.clear()
+                    PedidosStore.mesasConPedido.addAll(response.body() ?: emptyList())
+                }
+            }
+            override fun onFailure(call: Call<List<Int>>, t: Throwable) {}
+        })
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Lienzo del mapa
-        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF0F0F0))) {
-
-            // Elementos decorativos (debajo de las mesas)
-            ElementosStore.lista.forEach { elem ->
-                ElementoDecorativoComposable(
-                    elem = elem,
-                    isAdmin = isAdmin,
-                    seleccionado = elemSeleccionadoId == elem.id,
-                    onTap = {
-                        if (isAdmin)
-                            elemSeleccionadoId = if (elemSeleccionadoId == elem.id) null else elem.id
-                    },
-                    onPosicionCambiada = { id, x, y ->
-                        val idx = ElementosStore.lista.indexOfFirst { it.id == id }
-                        if (idx >= 0) {
-                            val e = ElementosStore.lista[idx]
-                            ElementosStore.lista[idx] = e.copy(posX = x, posY = y)
+        // Lienzo del mapa con gesto de pan cuando está activo
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF0F0F0))
+                .pointerInput(modoPan) {
+                    if (modoPan) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            canvasOffset += dragAmount
                         }
                     }
-                )
-            }
+                }
+        ) {
+            // Contenedor desplazado — todo el contenido se mueve junto
+            Box(modifier = Modifier.offset {
+                IntOffset(canvasOffset.x.roundToInt(), canvasOffset.y.roundToInt())
+            }) {
+                val modoEdicion = isAdmin && !modoPan
 
-            // Mesas
-            listaMesas.forEach { mesa ->
-                MapaMesas(
-                    mesa = mesa,
-                    isAdmin = isAdmin,
-                    onMesaClick = { onMesaClick(mesa) },
-                    onPosicionCambiada = { id, x, y ->
-                        RetrofitClient.instance.updateMesaPosicion(id, x, y)
-                            .enqueue(object : Callback<com.losjorges.planbar.models.LoginResponse> {
-                                override fun onResponse(call: Call<com.losjorges.planbar.models.LoginResponse>, response: Response<com.losjorges.planbar.models.LoginResponse>) {}
-                                override fun onFailure(call: Call<com.losjorges.planbar.models.LoginResponse>, t: Throwable) {}
-                            })
-                    }
-                )
+                // Elementos decorativos (debajo de las mesas)
+                ElementosStore.lista.forEach { elem ->
+                    ElementoDecorativoComposable(
+                        elem = elem,
+                        isAdmin = modoEdicion,
+                        seleccionado = elemSeleccionadoId == elem.id,
+                        onTap = {
+                            if (modoEdicion)
+                                elemSeleccionadoId = if (elemSeleccionadoId == elem.id) null else elem.id
+                        },
+                        onPosicionCambiada = { id, x, y ->
+                            val idx = ElementosStore.lista.indexOfFirst { it.id == id }
+                            if (idx >= 0) {
+                                val e = ElementosStore.lista[idx]
+                                ElementosStore.lista[idx] = e.copy(posX = x, posY = y)
+                            }
+                        }
+                    )
+                }
+
+                // Mesas
+                listaMesas.forEach { mesa ->
+                    MapaMesas(
+                        mesa = mesa,
+                        isAdmin = modoEdicion,
+                        onMesaClick = { onMesaClick(mesa) },
+                        onPosicionCambiada = { id, x, y ->
+                            RetrofitClient.instance.updateMesaPosicion(id, x, y)
+                                .enqueue(object : Callback<com.losjorges.planbar.models.LoginResponse> {
+                                    override fun onResponse(call: Call<com.losjorges.planbar.models.LoginResponse>, response: Response<com.losjorges.planbar.models.LoginResponse>) {}
+                                    override fun onFailure(call: Call<com.losjorges.planbar.models.LoginResponse>, t: Throwable) {}
+                                })
+                        }
+                    )
+                }
             }
         }
 
-        // Botones flotantes (solo admin)
-        if (isAdmin) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.End
-            ) {
-                if (elemSeleccionadoId != null) {
+        // Botones flotantes
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.End
+        ) {
+            if (isAdmin) {
+                if (elemSeleccionadoId != null && !modoPan) {
                     FloatingActionButton(
                         onClick = {
                             ElementosStore.eliminar(elemSeleccionadoId!!)
@@ -143,6 +176,22 @@ fun MapaMesasScreen(isAdmin: Boolean, onMesaClick: (Mesa) -> Unit) {
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = "Eliminar elemento")
                     }
+                }
+
+                // Botón para alternar modo pan / modo edición
+                FloatingActionButton(
+                    onClick = {
+                        modoPan = !modoPan
+                        if (modoPan) elemSeleccionadoId = null
+                    },
+                    containerColor = if (modoPan) MaterialTheme.colorScheme.tertiary else Color(0xFF546E7A),
+                    contentColor = Color.White,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = if (modoPan) Icons.Default.Edit else Icons.Default.OpenWith,
+                        contentDescription = if (modoPan) "Cambiar a modo edición" else "Cambiar a modo desplazamiento"
+                    )
                 }
 
                 ExtendedFloatingActionButton(

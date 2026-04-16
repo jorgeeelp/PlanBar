@@ -76,17 +76,19 @@ object ProductosStore {
 // ── Almacén de pedidos confirmados por mesa ────────────────────────────────
 // Clave: idMesa  →  Valor: mapa mutable de id_producto -> LineaPedido
 object PedidosStore {
-    // mutableStateMapOf para que Compose recomponga al cambiar
     val pedidos = mutableStateMapOf<Int, MutableMap<Int, LineaPedido>>()
+
+    // IDs de mesas con pedido activo según la BD (para colorear el mapa sin cargar líneas)
+    val mesasConPedido = mutableStateListOf<Int>()
 
     /** Devuelve el pedido activo de una mesa (puede estar vacío) */
     fun getPedido(idMesa: Int): MutableMap<Int, LineaPedido> {
         return pedidos.getOrPut(idMesa) { mutableMapOf() }
     }
 
-    /** Indica si una mesa tiene pedido activo con al menos un artículo */
+    /** Indica si una mesa tiene pedido activo */
     fun tienePedido(idMesa: Int): Boolean {
-        return pedidos[idMesa]?.isNotEmpty() == true
+        return mesasConPedido.contains(idMesa) || pedidos[idMesa]?.isNotEmpty() == true
     }
 
     /** Confirma el carrito actual añadiéndolo al pedido guardado de la mesa */
@@ -100,13 +102,14 @@ object PedidosStore {
                 pedidoActual[idProd] = linea.copy()
             }
         }
-        // Forzar recomposición reemplazando el entry
         pedidos[idMesa] = pedidoActual
+        mesasConPedido.add(idMesa)
     }
 
     /** Elimina el pedido de una mesa (cuenta pagada) */
     fun liquidarMesa(idMesa: Int) {
         pedidos.remove(idMesa)
+        mesasConPedido.removeAll { it == idMesa }
     }
 }
 

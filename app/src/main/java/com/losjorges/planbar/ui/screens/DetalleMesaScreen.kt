@@ -20,35 +20,63 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.google.gson.Gson
+import com.losjorges.planbar.models.LineaPedidoApi
 import com.losjorges.planbar.models.Producto
+import com.losjorges.planbar.network.RetrofitClient
+import com.losjorges.planbar.models.LoginResponse
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleMesaScreen(idMesa: Int, numeroMesa: Int, navController: NavHostController) {
     val context = LocalContext.current
 
-    // Productos del store
     var listaProductos by remember { mutableStateOf<List<Producto>>(ProductosStore.lista.toList()) }
-
-    // Carrito LOCAL para nuevos artículos a añadir
     val carrito = remember { mutableStateMapOf<Int, LineaPedido>() }
-
-    // Pedido ya confirmado (persiste entre visitas)
     val pedidoConfirmado = remember { PedidosStore.getPedido(idMesa) }
+    var isLoading by remember { mutableStateOf(true) }
 
-    // 0 = Carta, 1 = Pedido
-    var pestañaActual by remember { mutableIntStateOf(
-        if (PedidosStore.tienePedido(idMesa)) 1 else 0
-    ) }
+    var pestañaActual by remember { mutableIntStateOf(0) }
     var tabCategoriaSeleccionado by remember { mutableIntStateOf(0) }
-
-    // Diálogo confirmación de pago
     var mostrarDialogoPago by remember { mutableStateOf(false) }
 
     val todasCategorias = listOf("todos") + CATEGORIAS_MENU
 
+    // Cargar pedido activo desde la BD al abrir la mesa
     LaunchedEffect(Unit) {
         listaProductos = ProductosStore.lista.toList()
+        RetrofitClient.instance.getPedidoMesa(idMesa).enqueue(object : Callback<List<LineaPedidoApi>> {
+            override fun onResponse(call: Call<List<LineaPedidoApi>>, response: Response<List<LineaPedidoApi>>) {
+                if (response.isSuccessful) {
+                    val lineas = response.body() ?: emptyList()
+                    PedidosStore.pedidos.remove(idMesa)
+                    if (lineas.isNotEmpty()) {
+                        val pedido = PedidosStore.getPedido(idMesa)
+                        lineas.forEach { linea ->
+                            val producto = Producto(
+                                id_producto           = linea.producto_id,
+                                nombre_producto       = linea.nombre_producto,
+                                precio_producto       = linea.precio_producto,
+                                categoria_producto    = linea.categoria_producto,
+                                observaciones_producto = linea.observaciones_producto,
+                                foto_producto         = "default.jpg"
+                            )
+                            pedido[linea.producto_id] = LineaPedido(producto, linea.cantidad)
+                        }
+                        PedidosStore.pedidos[idMesa] = pedido
+                        PedidosStore.mesasConPedido.add(idMesa)
+                        pestañaActual = 1
+                    }
+                }
+                isLoading = false
+            }
+            override fun onFailure(call: Call<List<LineaPedidoApi>>, t: Throwable) {
+                isLoading = false
+            }
+        })
     }
 
     val productosFiltrados = if (tabCategoriaSeleccionado == 0) listaProductos
@@ -123,6 +151,25 @@ fun DetalleMesaScreen(idMesa: Int, numeroMesa: Int, navController: NavHostContro
                                 onClick = {
                                     // Confirmar: guarda en PedidosStore y vuelve al mapa
                                     PedidosStore.confirmarPedido(idMesa, carrito.toMap())
+                                    val lineasJson = Gson().toJson(
+                                        PedidosStore.getPedido(idMesa).values.map { l ->
+                                            mapOf(
+                                                "producto_id"            to l.producto.id_producto,
+                                                "nombre_producto"        to l.producto.nombre_producto,
+                                                "precio_producto"        to l.producto.precio_producto,
+                                                "categoria_producto"     to l.producto.categoria_producto,
+                                                "observaciones_producto" to l.producto.observaciones_producto,
+                                                "cantidad"               to l.cantidad
+                                            )
+                                        }
+                                    )
+                                    RetrofitClient.instance.confirmarPedido(idMesa, lineasJson)
+                                        .enqueue(object : Callback<LoginResponse> {
+                                            override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {}
+                                            override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                                                Toast.makeText(context, "Error al guardar pedido", Toast.LENGTH_SHORT).show()
+                                            }
+                                        })
                                     carrito.clear()
                                     Toast.makeText(
                                         context,
@@ -146,7 +193,11 @@ fun DetalleMesaScreen(idMesa: Int, numeroMesa: Int, navController: NavHostContro
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else Column(modifier = Modifier.padding(padding).fillMaxSize()) {
 
             // ── Pestañas: Carta | Pedido ──────────────────────────────────
             TabRow(selectedTabIndex = pestañaActual) {
@@ -392,6 +443,13 @@ fun DetalleMesaScreen(idMesa: Int, numeroMesa: Int, navController: NavHostContro
             confirmButton = {
                 Button(
                     onClick = {
+                        RetrofitClient.instance.liquidarMesa(idMesa)
+                            .enqueue(object : Callback<LoginResponse> {
+                                override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {}
+                                override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                                    Toast.makeText(context, "Error al liquidar mesa", Toast.LENGTH_SHORT).show()
+                                }
+                            })
                         PedidosStore.liquidarMesa(idMesa)
                         carrito.clear()
                         mostrarDialogoPago = false

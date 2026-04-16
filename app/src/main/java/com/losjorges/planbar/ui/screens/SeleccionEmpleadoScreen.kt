@@ -49,11 +49,19 @@ fun SeleccionEmpleadoScreen(navController: NavHostController) {
                 }
             }
             override fun onFailure(call: Call<List<Empleado>>, t: Throwable) {
-                val nombreError = t::class.java.simpleName
-                val mensajeError = t.message ?: "Sin mensaje detallado"
+                val tipo = t::class.java.simpleName
+                val mensaje = t.message ?: "Sin mensaje"
+                val causa = t.cause?.let { "${it::class.java.simpleName}: ${it.message}" } ?: "Sin causa"
+                val url = call.request().url().toString()
 
-                android.util.Log.e("CONEXION_DEBUG", "TIPO: $nombreError | MENSAJE: $mensajeError")
-                Toast.makeText(context, "Error: $nombreError", Toast.LENGTH_LONG).show()
+                android.util.Log.e("PLANBAR_NET", "=== ERROR DE CONEXIÓN ===")
+                android.util.Log.e("PLANBAR_NET", "URL     : $url")
+                android.util.Log.e("PLANBAR_NET", "TIPO    : $tipo")
+                android.util.Log.e("PLANBAR_NET", "MENSAJE : $mensaje")
+                android.util.Log.e("PLANBAR_NET", "CAUSA   : $causa")
+                android.util.Log.e("PLANBAR_NET", "========================", t)
+
+                Toast.makeText(context, "Error: $tipo — $mensaje", Toast.LENGTH_LONG).show()
             }
         })
     }
