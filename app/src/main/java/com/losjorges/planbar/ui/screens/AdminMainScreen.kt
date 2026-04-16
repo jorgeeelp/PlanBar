@@ -34,6 +34,8 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+// Las categorías y ProductosStore se han movido a SharedData.kt
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminScreen(navController: NavHostController) {
@@ -191,7 +193,6 @@ fun GestionMesasContent() {
                         onClick = {
                             val numMesa = numero.toIntOrNull()
                             val capMesa = capacidad.toIntOrNull()
-
                             if (numMesa != null && capMesa != null) {
                                 RetrofitClient.instance.insertMesa(numMesa, capMesa).enqueue(object : Callback<LoginResponse> {
                                     override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
@@ -259,15 +260,8 @@ fun GestionMesasContent() {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("MESA Nº ${mesa.numero_mesa}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
                             Text("Capacidad: ${mesa.capacidad_mesa} personas", fontSize = 14.sp, color = Color.Gray)
-
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "ESTADO: ",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color.Black
-                                )
-
+                                Text("ESTADO: ", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                                 Text(
                                     text = mesa.estado_mesa.uppercase(),
                                     fontSize = 12.sp,
@@ -383,10 +377,7 @@ fun GestionEmpleadosContent() {
                             if (dni.isNotEmpty() && nombre.isNotEmpty() && rol.isNotEmpty()) {
                                 RetrofitClient.instance.insertEmpleado(dni, nombre, rol).enqueue(object : Callback<LoginResponse> {
                                     override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                                        if (response.isSuccessful) {
-                                            limpiarFormulario();
-                                            cargarEmpleados();
-                                            Toast.makeText(context, "Insertado", Toast.LENGTH_SHORT).show() }
+                                        if (response.isSuccessful) { limpiarFormulario(); cargarEmpleados(); Toast.makeText(context, "Insertado", Toast.LENGTH_SHORT).show() }
                                     }
                                     override fun onFailure(call: Call<LoginResponse>, t: Throwable) {}
                                 })
@@ -401,10 +392,7 @@ fun GestionEmpleadosContent() {
                             idEmpleadoSeleccionado?.let { id ->
                                 RetrofitClient.instance.updateEmpleado(id, dni, nombre, rol).enqueue(object : Callback<LoginResponse> {
                                     override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                                        if (response.isSuccessful) {
-                                            limpiarFormulario();
-                                            cargarEmpleados();
-                                            Toast.makeText(context, "Actualizado", Toast.LENGTH_SHORT).show() }
+                                        if (response.isSuccessful) { limpiarFormulario(); cargarEmpleados(); Toast.makeText(context, "Actualizado", Toast.LENGTH_SHORT).show() }
                                     }
                                     override fun onFailure(call: Call<LoginResponse>, t: Throwable) {}
                                 })
@@ -429,10 +417,7 @@ fun GestionEmpleadosContent() {
         Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            val listaFiltrada = listaEmpleados.filter {
-                it.rol_empleado != "admin"
-            }
-
+            val listaFiltrada = listaEmpleados.filter { it.rol_empleado != "admin" }
             items(listaFiltrada) { emp ->
                 Surface(
                     onClick = {
@@ -446,11 +431,7 @@ fun GestionEmpleadosContent() {
                     color = if (idEmpleadoSeleccionado == emp.id_empleado) Color(0xFFFFF3E0) else Color.White,
                     tonalElevation = 2.dp
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("ID: ${emp.id_empleado} | ${emp.rol_empleado.uppercase()}", fontSize = 11.sp, color = Color.Black)
                             Text(emp.nombre_empleado, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
@@ -478,8 +459,7 @@ fun GestionEmpleadosContent() {
                         RetrofitClient.instance.deleteEmpleado(employeeToDelete!!.id_empleado).enqueue(object : Callback<LoginResponse> {
                             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                                 if (response.isSuccessful) {
-                                    cargarEmpleados()
-                                    showDeleteDialog = false
+                                    cargarEmpleados(); showDeleteDialog = false
                                     if (idEmpleadoSeleccionado == employeeToDelete?.id_empleado) limpiarFormulario()
                                 }
                             }
@@ -501,37 +481,19 @@ fun GestionProductosContent() {
     var nombre by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
     var observaciones by remember { mutableStateOf("") }
-
     var categoria by remember { mutableStateOf("") }
     var expandedCat by remember { mutableStateOf(false) }
-    val opcionesCategoria = listOf("entrantes", "carnes", "pescados", "bebidas", "postres")
-
-    var foto by remember { mutableStateOf("default.jpg") }
-    var listaProductos by remember { mutableStateOf(emptyList<Producto>()) }
+    val foto = "default.jpg"
+    // Lista desde el almacén en memoria (sin SQL ni Retrofit)
+    val listaProductos = ProductosStore.lista
     var idProductoSeleccionado by remember { mutableStateOf<Int?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var productoToDelete by remember { mutableStateOf<Producto?>(null) }
+    var tabSeleccionado by remember { mutableStateOf(0) }
 
     fun limpiarFormulario() {
         nombre = ""; precio = ""; observaciones = ""; categoria = ""; idProductoSeleccionado = null
     }
-
-    fun cargarProductos() {
-        RetrofitClient.instance.getProductos().enqueue(object : Callback<List<Producto>> {
-            override fun onResponse(call: Call<List<Producto>>, response: Response<List<Producto>>) {
-                if (response.isSuccessful) {
-                    listaProductos = response.body() ?: emptyList()
-                } else {
-                    Toast.makeText(context, "Error al cargar: ${response.code()}", Toast.LENGTH_SHORT).show()
-                }
-            }
-            override fun onFailure(call: Call<List<Producto>>, t: Throwable) {
-                Toast.makeText(context, "Fallo al procesar datos: ${t.message}", Toast.LENGTH_LONG).show()
-            }
-        })
-    }
-
-    LaunchedEffect(Unit) { cargarProductos() }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(4.dp)) {
@@ -543,8 +505,12 @@ fun GestionProductosContent() {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre del Producto") }, modifier = Modifier.fillMaxWidth())
-
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = { Text("Nombre del Producto") },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -570,9 +536,9 @@ fun GestionProductosContent() {
                             modifier = Modifier.menuAnchor()
                         )
                         ExposedDropdownMenu(expanded = expandedCat, onDismissRequest = { expandedCat = false }) {
-                            opcionesCategoria.forEach { cat ->
+                            CATEGORIAS_MENU.forEach { cat ->
                                 DropdownMenuItem(
-                                    text = { Text(cat) },
+                                    text = { Text(cat.replaceFirstChar { it.uppercase() }) },
                                     onClick = { categoria = cat; expandedCat = false }
                                 )
                             }
@@ -582,72 +548,78 @@ fun GestionProductosContent() {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(value = observaciones,
+                OutlinedTextField(
+                    value = observaciones,
                     onValueChange = { observaciones = it },
                     label = { Text("Observaciones") },
-                    modifier = Modifier.fillMaxWidth())
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = {
-                            val precioDouble = precio.replace(",", ".").toDoubleOrNull()
-                            if (nombre.isNotEmpty() && precioDouble != null && categoria.isNotEmpty()) {
-                                RetrofitClient.instance.insertProducto(nombre, precioDouble, categoria, observaciones, foto).enqueue(object : Callback<LoginResponse> {
-                                    override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                                        if (response.isSuccessful) {
-                                            limpiarFormulario()
-                                            cargarProductos()
-                                            Toast.makeText(context, "Producto añadido", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                    override fun onFailure(call: Call<LoginResponse>, t: Throwable) {}
-                                })
+                // Botón único de guardar/confirmar
+                Button(
+                    onClick = {
+                        val precioDouble = precio.replace(",", ".").toDoubleOrNull()
+                        if (nombre.isNotEmpty() && precioDouble != null && categoria.isNotEmpty()) {
+                            if (idProductoSeleccionado == null) {
+                                ProductosStore.insertar(nombre, precioDouble, categoria, observaciones, foto)
+                                Toast.makeText(context, "✓ Producto guardado", Toast.LENGTH_SHORT).show()
                             } else {
-                                Toast.makeText(context, "Rellena Nombre, Precio y Categoría", Toast.LENGTH_SHORT).show()
+                                ProductosStore.actualizar(idProductoSeleccionado!!, nombre, precioDouble, categoria, observaciones, foto)
+                                Toast.makeText(context, "✓ Cambios guardados", Toast.LENGTH_SHORT).show()
                             }
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = idProductoSeleccionado == null
-                    ) { Text("Añadir") }
-
-                    Button(
-                        onClick = {
-                            val precioDouble = precio.replace(",", ".").toDoubleOrNull()
-                            idProductoSeleccionado?.let { id ->
-                                if (precioDouble != null) {
-                                    RetrofitClient.instance.updateProducto(id, nombre, precioDouble, categoria, observaciones, foto).enqueue(object : Callback<LoginResponse> {
-                                        override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                                            if (response.isSuccessful) {
-                                                limpiarFormulario()
-                                                cargarProductos()
-                                                Toast.makeText(context, "Producto actualizado", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                        override fun onFailure(call: Call<LoginResponse>, t: Throwable) {}
-                                    })
-                                }
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = idProductoSeleccionado != null,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100))
-                    ) { Text("Editar") }
+                            limpiarFormulario()
+                        } else {
+                            Toast.makeText(context, "Rellena Nombre, Precio y Categoría", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (idProductoSeleccionado == null) MaterialTheme.colorScheme.primary else Color(0xFFE65100)
+                    )
+                ) {
+                    Text(
+                        text = if (idProductoSeleccionado == null) "✓ Guardar Producto" else "✓ Confirmar Cambios",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
                 if (idProductoSeleccionado != null) {
-                    TextButton(onClick = { limpiarFormulario() }, modifier = Modifier.fillMaxWidth()) { Text("Cancelar Edición", color = Color.Gray) }
+                    TextButton(onClick = { limpiarFormulario() }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Cancelar Edición", color = Color.Gray)
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-        Text("Productos", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Tabs de categorías para filtrar
+        val todasCategorias = listOf("todos") + CATEGORIAS_MENU
+        ScrollableTabRow(selectedTabIndex = tabSeleccionado, edgePadding = 0.dp) {
+            todasCategorias.forEachIndexed { index, cat ->
+                Tab(
+                    selected = tabSeleccionado == index,
+                    onClick = { tabSeleccionado = index },
+                    text = {
+                        Text(
+                            text = cat.replaceFirstChar { it.uppercase() },
+                            fontSize = 12.sp,
+                            fontWeight = if (tabSeleccionado == index) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
 
+        val productosFiltrados = if (tabSeleccionado == 0) listaProductos.toList()
+        else listaProductos.filter { it.categoria_producto == todasCategorias[tabSeleccionado] }
+
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(listaProductos) { prod ->
+            items(productosFiltrados) { prod ->
                 Surface(
                     onClick = {
                         idProductoSeleccionado = prod.id_producto
@@ -663,13 +635,19 @@ fun GestionProductosContent() {
                 ) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "${prod.nombre_producto.uppercase()} | ${prod.categoria_producto.uppercase()}",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = Color.Black
-                            )
-                            Text("${prod.precio_producto} €", fontSize = 14.sp, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            Text(prod.nombre_producto.uppercase(), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.Black)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(4.dp)) {
+                                    Text(
+                                        text = prod.categoria_producto,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Text("${prod.precio_producto} €", fontSize = 14.sp, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            }
                             if (prod.observaciones_producto.isNotEmpty()) {
                                 Text(prod.observaciones_producto, fontSize = 12.sp, color = Color.Gray)
                             }
@@ -693,15 +671,9 @@ fun GestionProductosContent() {
                 Button(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                     onClick = {
-                        RetrofitClient.instance.deleteProducto(productoToDelete!!.id_producto).enqueue(object : Callback<LoginResponse> {
-                            override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                                if (response.isSuccessful) {
-                                    cargarProductos()
-                                    showDeleteDialog = false
-                                }
-                            }
-                            override fun onFailure(call: Call<LoginResponse>, t: Throwable) { showDeleteDialog = false }
-                        })
+                        ProductosStore.eliminar(productoToDelete!!.id_producto)
+                        if (idProductoSeleccionado == productoToDelete?.id_producto) limpiarFormulario()
+                        showDeleteDialog = false
                     }
                 ) { Text("Eliminar") }
             },
