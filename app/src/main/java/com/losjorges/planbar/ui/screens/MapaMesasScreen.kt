@@ -94,6 +94,17 @@ fun MapaMesasScreen(isAdmin: Boolean, onMesaClick: (Mesa) -> Unit) {
             }
             override fun onFailure(call: Call<List<Int>>, t: Throwable) {}
         })
+        RetrofitClient.instance.getPedidosCocina().enqueue(object : Callback<List<com.losjorges.planbar.models.PedidoCocinaApi>> {
+            override fun onResponse(call: Call<List<com.losjorges.planbar.models.PedidoCocinaApi>>, response: Response<List<com.losjorges.planbar.models.PedidoCocinaApi>>) {
+                if (response.isSuccessful) {
+                    PedidosStore.mesasListas.clear()
+                    response.body()?.filter { it.preparado }?.forEach {
+                        PedidosStore.mesasListas.add(it.mesa_id)
+                    }
+                }
+            }
+            override fun onFailure(call: Call<List<com.losjorges.planbar.models.PedidoCocinaApi>>, t: Throwable) {}
+        })
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -429,7 +440,7 @@ fun MapaMesas(
     // Si hay pedido activo en memoria, la mesa se muestra amarilla
     val tienePedido = PedidosStore.tienePedido(mesa.id_mesa)
     val colorEstado = when {
-        tienePedido -> Color(0xFFF9A825)   // amarillo = pedido activo
+        tienePedido -> Color(0xFFF9A825)   // amarillo = pedido activo o preparado
         mesa.estado_mesa.lowercase() == "libre"     -> Color(0xFF2E7D32)
         mesa.estado_mesa.lowercase() == "reservada" -> Color(0xFFF57C00)
         mesa.estado_mesa.lowercase() == "ocupada"   -> Color(0xFFD32F2F)

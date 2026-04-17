@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.google.gson.Gson
-import com.losjorges.planbar.models.LineaPedidoApi
+import com.losjorges.planbar.models.LineaPedido as LineaPedidoApi
 import com.losjorges.planbar.models.Producto
 import com.losjorges.planbar.network.RetrofitClient
 import com.losjorges.planbar.models.LoginResponse
@@ -45,7 +45,6 @@ fun DetalleMesaScreen(idMesa: Int, numeroMesa: Int, navController: NavHostContro
 
     val todasCategorias = listOf("todos") + CATEGORIAS_MENU
 
-    // Cargar pedido activo desde la BD al abrir la mesa
     LaunchedEffect(Unit) {
         listaProductos = ProductosStore.lista.toList()
         RetrofitClient.instance.getPedidoMesa(idMesa).enqueue(object : Callback<List<LineaPedidoApi>> {
@@ -82,7 +81,6 @@ fun DetalleMesaScreen(idMesa: Int, numeroMesa: Int, navController: NavHostContro
     val productosFiltrados = if (tabCategoriaSeleccionado == 0) listaProductos
     else listaProductos.filter { it.categoria_producto == todasCategorias[tabCategoriaSeleccionado] }
 
-    // Totales del carrito nuevo (lo que se está añadiendo ahora)
     val totalCarritoProductos = carrito.values.sumOf { it.cantidad }
     val totalCarritoPrecio = carrito.values.sumOf { it.producto.precio_producto * it.cantidad }
 

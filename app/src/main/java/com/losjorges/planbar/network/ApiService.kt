@@ -1,9 +1,10 @@
 package com.losjorges.planbar.network
 
 import com.losjorges.planbar.models.Empleado
-import com.losjorges.planbar.models.LineaPedidoApi
+import com.losjorges.planbar.models.LineaPedido
 import com.losjorges.planbar.models.LoginResponse
 import com.losjorges.planbar.models.Mesa
+import com.losjorges.planbar.models.PedidoCocinaApi
 import com.losjorges.planbar.models.Producto
 import com.losjorges.planbar.models.Reserva
 import okhttp3.OkHttpClient
@@ -113,7 +114,7 @@ interface ApiService {
 
     //pedidos
     @GET("pedidos/get_pedido_mesa.php")
-    fun getPedidoMesa(@Query("mesa_id") mesaId: Int): Call<List<LineaPedidoApi>>
+    fun getPedidoMesa(@Query("mesa_id") mesaId: Int): Call<List<LineaPedido>>
 
     @GET("pedidos/get_mesas_activas.php")
     fun getMesasActivas(): Call<List<Int>>
@@ -128,6 +129,13 @@ interface ApiService {
     @FormUrlEncoded
     @POST("pedidos/liquidar_mesa.php")
     fun liquidarMesa(@Field("mesa_id") mesaId: Int): Call<LoginResponse>
+
+    @GET("pedidos/get_pedidos_cocina.php")
+    fun getPedidosCocina(): Call<List<PedidoCocinaApi>>
+
+    @FormUrlEncoded
+    @POST("pedidos/marcar_pedido_listo.php")
+    fun marcarPedidoListo(@Field("mesa_id") mesaId: Int): Call<LoginResponse>
 
     //reservas
     @GET("reservas/get_reservas.php")

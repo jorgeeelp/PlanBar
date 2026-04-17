@@ -1,6 +1,6 @@
 package com.losjorges.planbar.models
 
-data class LineaPedidoApi(
+data class LineaPedido(
     val producto_id: Int,
     val nombre_producto: String,
     val precio_producto: Double,

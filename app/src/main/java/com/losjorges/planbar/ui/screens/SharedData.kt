@@ -81,6 +81,9 @@ object PedidosStore {
     // IDs de mesas con pedido activo según la BD (para colorear el mapa sin cargar líneas)
     val mesasConPedido = mutableStateListOf<Int>()
 
+    // IDs de mesas cuyo pedido ya está preparado por cocina
+    val mesasListas = mutableStateListOf<Int>()
+
     /** Devuelve el pedido activo de una mesa (puede estar vacío) */
     fun getPedido(idMesa: Int): MutableMap<Int, LineaPedido> {
         return pedidos.getOrPut(idMesa) { mutableMapOf() }
@@ -110,6 +113,7 @@ object PedidosStore {
     fun liquidarMesa(idMesa: Int) {
         pedidos.remove(idMesa)
         mesasConPedido.removeAll { it == idMesa }
+        mesasListas.removeAll { it == idMesa }
     }
 }
 
